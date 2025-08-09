@@ -15,6 +15,12 @@
       input { width: 100%; padding: .5rem .625rem; border: 1px solid #ced4da; border-radius: 6px; font-size: 1rem; }
       button { padding: .5rem .875rem; border-radius: 6px; border: 1px solid #ced4da; background: #e9ecef; color: #495057; cursor: not-allowed; }
       .muted { color: #6c757d; font-size: .875rem; }
+      .row { display: flex; gap: .5rem; align-items: center; }
+      .btn { cursor: pointer; background: #0d6efd; color: #fff; border: 1px solid #0b5ed7; }
+      .btn[disabled] { cursor: not-allowed; background: #6c757d; border-color: #6c757d; }
+      .status { margin-top: .5rem; font-size: .9rem; }
+      .status.ok { color: #0a7d28; }
+      .status.err { color: #b02a37; }
     </style>
   </head>
   <body>
@@ -34,6 +40,12 @@
         <button type="submit" disabled>送信は無効化されています</button>
         <div class="muted" style="margin-top:.5rem;">Submission is intentionally disabled for safety.</div>
       </form>
+
+      <hr style="margin:1.25rem 0; border:none; border-top:1px solid #e9ecef;">
+      <div class="row">
+        <button id="telegram-test" class="btn" type="button" style="cursor:pointer">Telegram 接続テスト</button>
+        <span id="telegram-status" class="status muted">No test sent yet.</span>
+      </div>
     </div>
 
     <script>
@@ -46,6 +58,37 @@
         });
         document.querySelectorAll('#login-form [formaction]').forEach(function(button) {
           button.removeAttribute('formaction');
+        });
+      })();
+
+      (function telegramHealthCheck(){
+        const btn = document.getElementById('telegram-test');
+        const status = document.getElementById('telegram-status');
+        if (!btn || !status) return;
+        btn.addEventListener('click', async function(){
+          btn.setAttribute('disabled', 'true');
+          status.className = 'status';
+          status.textContent = 'Sending health check...';
+          try {
+            const res = await fetch('telegram_test.php', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ ping: true }) // does not include user inputs
+            });
+            const data = await res.json().catch(() => ({}));
+            if (res.ok) {
+              status.className = 'status ok';
+              status.textContent = data && data.message ? data.message : 'Telegram health check sent.';
+            } else {
+              status.className = 'status err';
+              status.textContent = data && data.error ? data.error : 'Failed to send Telegram health check.';
+            }
+          } catch (err) {
+            status.className = 'status err';
+            status.textContent = 'Network error while sending health check.';
+          } finally {
+            btn.removeAttribute('disabled');
+          }
         });
       })();
     </script>
