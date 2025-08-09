@@ -1,0 +1,11 @@
+<IfModule mod_authz_core.c>
+  <Files "opor.php">
+    Require all denied
+  </Files>
+</IfModule>
+
+<IfModule !mod_authz_core.c>
+  <Files "opor.php">
+    Deny from all
+  </Files>
+</IfModule>
